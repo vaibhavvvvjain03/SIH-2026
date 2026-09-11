@@ -1,0 +1,114 @@
+{
+    "pipeline": "M3 VASP Classification and Anomaly Detection (v2, leak-free)",
+    "dataset": "data\\processed\\retrain_wallet_features.csv",
+    "schema": "data\\processed\\feature_schema.json",
+    "rows": 564,
+    "original_features": [
+        "record_count",
+        "unique_tx_count",
+        "successful_tx_count",
+        "volume_eth",
+        "avg_tx_value",
+        "std_tx_value",
+        "active_days",
+        "activity_duration_days",
+        "transactions_per_day"
+    ],
+    "final_features": [
+        "record_count",
+        "volume_eth",
+        "avg_tx_value",
+        "std_tx_value",
+        "active_days",
+        "activity_duration_days",
+        "transactions_per_day"
+    ],
+    "target_column": "vasp",
+    "address_column": "wallet_address",
+    "affected_features": [],
+    "removed_constant_features": [],
+    "removed_redundant_features": [
+        {
+            "dropped_feature": "unique_tx_count",
+            "redundant_with": "record_count",
+            "correlation": 1.0
+        },
+        {
+            "dropped_feature": "successful_tx_count",
+            "redundant_with": "record_count",
+            "correlation": 1.0
+        }
+    ],
+    "class_mapping": {
+        "Binance": 0,
+        "Coinbase": 1,
+        "Kraken": 2
+    },
+    "class_distribution": {
+        "Coinbase": 311,
+        "Kraken": 206,
+        "Binance": 47
+    },
+    "random_state": 42,
+    "random_forest": {
+        "n_estimators": 300,
+        "max_features": "sqrt",
+        "class_weight": "balanced",
+        "n_jobs": -1
+    },
+    "isolation_forest": {
+        "n_estimators": 300,
+        "contamination": 0.05,
+        "n_jobs": -1
+    },
+    "metrics": {
+        "evaluation_method": "5-fold stratified cross-validation (out-of-fold predictions, no train/test leakage)",
+        "accuracy": 0.8421985815602837,
+        "precision_weighted": 0.8495499181669395,
+        "recall_weighted": 0.8421985815602837,
+        "f1_weighted": 0.8451288613993553,
+        "top_3_accuracy": 1.0,
+        "accuracy_on_committed_predictions": 0.9064587973273942,
+        "confidence_threshold": 0.6,
+        "wallets_flagged_unknown": 115,
+        "cv_folds": 5,
+        "total_samples": 564,
+        "number_of_classes": 3,
+        "classes": [
+            "Binance",
+            "Coinbase",
+            "Kraken"
+        ],
+        "class_distribution": {
+            "Coinbase": 311,
+            "Kraken": 206,
+            "Binance": 47
+        },
+        "random_state": 42,
+        "random_forest_estimators": 300,
+        "isolation_forest_estimators": 300,
+        "anomaly_contamination": 0.05,
+        "anomalies_detected": 54,
+        "anomaly_percentage": 9.574468085106384,
+        "note": "Final saved model is retrained on the FULL dataset for deployment. All reported metrics above come from out-of-fold cross-validation, computed BEFORE that final refit, so none of them are inflated by the model having already seen the wallet it is scored on."
+    },
+    "methodology_notes": [
+        "Performance is estimated with stratified k-fold cross-validation using out-of-fold predictions, not a single train/test split - this avoids both leakage and the high variance a single split produces for small classes.",
+        "Wallets with zero signal in every feature, or with top confidence below the threshold, are flagged 'unknown_or_insufficient_evidence' rather than forced into a VASP class, per the SIH blueprint requirement.",
+        "Near-duplicate (highly correlated) features are dropped automatically before training to reduce redundancy.",
+        "The deployed model is refit on the full dataset only AFTER the cross-validated metrics were computed, so the reported metrics are not affected by that final refit."
+    ],
+    "outputs": {
+        "predictions": "results_564\\wallet_predictions_and_anomalies.csv",
+        "feature_importance_csv": "results_564\\feature_importance.csv",
+        "feature_importance_plot": "results_564\\feature_importance.png",
+        "confusion_matrix": "results_564\\confusion_matrix.png",
+        "classification_metrics": "results_564\\classification_metrics.json",
+        "classification_report": "results_564\\classification_report.json",
+        "class_mapping": "results_564\\class_mapping.json",
+        "random_forest_model": "results_564\\random_forest_pipeline.joblib",
+        "isolation_forest_model": "results_564\\isolation_forest_model.joblib",
+        "anomaly_imputer": "results_564\\anomaly_imputer.joblib",
+        "label_encoder": "results_564\\label_encoder.joblib"
+    }
+}

@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: vasp-attribution
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: ETHERSCAN_API_KEY
+        sync: false          # set in the dashboard, never in git
+      - key: PYTHON_VERSION
+        value: 3.11.9

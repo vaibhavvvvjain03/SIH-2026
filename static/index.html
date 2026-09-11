@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#08090b" />
+  <meta name="description"
+    content="Ashen Attribution — Blockchain intelligence console for probabilistic VASP attribution." />
+  <title>DARK SOULS // VASP Attribution</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+</head>
+
+<body>
+
+  <!-- Cinematic intro -->
+  <div id="intro-overlay" class="intro-overlay" role="dialog" aria-modal="true" aria-label="Intro cinematic">
+    <video id="intro-video" class="intro-video" src="assets/intro.mp4" poster="assets/intro-poster.jpg" autoplay muted
+      playsinline preload="auto"></video>
+    <div class="intro-vignette" aria-hidden="true"></div>
+    <div class="intro-grain" aria-hidden="true"></div>
+    <div class="intro-flash" aria-hidden="true"></div>
+
+    <div class="intro-titlecard" aria-hidden="true">
+      <div class="brand-mark" aria-hidden="true"><span></span></div>
+      <h1 class="intro-title">ASHEN <span>ATTRIBUTION</span></h1>
+    </div>
+
+    <button type="button" class="intro-skip" id="intro-skip">
+      <span class="intro-skip__ring"></span>
+      <span class="intro-skip__text">Click anywhere to skip</span>
+    </button>
+  </div>
+
+  <!-- Canvas particle system -->
+  <canvas id="particle-canvas" aria-hidden="true"></canvas>
+
+  <!-- Ambient glow zones -->
+  <div class="ambient-glow ambient-glow--top" aria-hidden="true"></div>
+  <div class="ambient-glow ambient-glow--mid" aria-hidden="true"></div>
+
+  <!-- Film grain overlay -->
+  <div class="grain-overlay" aria-hidden="true"></div>
+
+  <!-- Vignette -->
+  <div class="vignette" aria-hidden="true"></div>
+
+  <!-- Animated mesh background -->
+  <div class="mesh-bg" aria-hidden="true"></div>
+
+  <div class="console">
+    <header class="console-header">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true"><span></span></div>
+        <div>
+          <div class="eyebrow">DARK SOULS // SIH 2026</div>
+          <h1>ASHEN <span>ATTRIBUTION</span></h1>
+          <p class="brand-sub">Blockchain intelligence console · probabilistic VASP attribution</p>
+        </div>
+      </div>
+      <div class="header-status"><i></i><span>INVESTIGATION MODE</span></div>
+    </header>
+
+    <section class="input-bar glass" aria-label="Wallet lookup">
+      <div class="section-rune">I</div>
+      <div class="lookup-copy">
+        <span class="mini-label">BEGIN INVESTIGATION</span>
+        <strong>Trace a suspect wallet through the chain</strong>
+      </div>
+      <form id="lookup-form">
+        <div class="field">
+          <label for="address-input">Suspect wallet address</label>
+          <input id="address-input" type="text" placeholder="0x… or bc1…" autocomplete="off" spellcheck="false"
+            required />
+        </div>
+        <div class="field field--narrow">
+          <label for="chain-select">Chain</label>
+          <select id="chain-select">
+            <option value="ethereum">Ethereum</option>
+            <option value="bsc">BNB Chain</option>
+            <option value="polygon">Polygon</option>
+            <option value="bitcoin">Bitcoin</option>
+          </select>
+        </div>
+        <button type="submit" id="analyze-btn"><span class="btn-flare"></span><span>AWAKEN TRACE</span><b>↗</b></button>
+      </form>
+    </section>
+
+    <section class="pipeline glass" id="pipeline" aria-live="polite" hidden>
+      <div class="pipeline-title"><span class="pulse-ring"></span> THE TRACE IS MOVING</div>
+      <ol class="pipeline-steps">
+        <li data-step="collection"><span class="step-dot"></span><span>CHAIN SCAN</span></li>
+        <li data-step="features"><span class="step-dot"></span><span>FEATURE EXTRACTION</span></li>
+        <li data-step="scoring"><span class="step-dot"></span><span>ML + GRAPH</span></li>
+        <li data-step="fusion"><span class="step-dot"></span><span>EVIDENCE FUSION</span></li>
+      </ol>
+    </section>
+
+    <main id="results" class="results" hidden>
+      <section class="intel-strip">
+        <div class="intel-title">
+          <span class="mini-label">INVESTIGATION RESULT</span>
+          <h2>THE TRACE HAS SPOKEN</h2>
+          <p>Evidence is ranked, not declared as ownership. Expand a candidate to inspect the reasoning trail.</p>
+          <p class="mini-label" id="chain-depth"></p>
+        </div>
+        <div class="signal-orb" aria-label="Fused attribution score">
+          <strong id="metric-fused">—</strong><small>FUSED SCORE</small>
+        </div>
+        <div class="signal-metrics">
+          <div><span>ML</span><strong id="metric-ml">—</strong></div>
+          <div><span>GRAPH</span><strong id="metric-graph">—</strong></div>
+          <div><span>TX</span><strong id="metric-tx">—</strong></div>
+        </div>
+      </section>
+
+      <div id="disagreement-banner" class="disagreement-banner" hidden></div>
+
+      <div class="results-grid">
+        <section class="panel candidates-panel" aria-label="Ranked VASP candidates">
+          <div class="panel-head">
+            <div><span class="mini-label">TOP-K ATTRIBUTION</span>
+              <h2>Known VASP echoes</h2>
+            </div>
+            <span id="candidate-count" class="panel-note"></span>
+          </div>
+          <div class="candidates-scroll-body" id="candidates-scroll-body">
+            <div id="candidates-list"></div>
+
+            <!-- BEHAVIOURAL FEATURE SIGNATURE & EVIDENCE (Fills empty space with high-value intelligence) -->
+            <div class="evidence-matrix-box" id="evidence-matrix-box">
+              <div class="evidence-matrix-head">
+                <span class="mini-label">BEHAVIOURAL FEATURE SIGNATURE</span>
+                <span class="feature-sample-badge">M2 ML PIPELINE</span>
+              </div>
+              <div class="feature-metrics-grid" id="feature-metrics-grid">
+                <!-- Dynamically populated in app.js -->
+              </div>
+              <div class="evidence-points-block">
+                <span class="mini-label">PRIMARY EVIDENCE TRAIL</span>
+                <ul id="evidence-points-list"></ul>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel graph-panel" aria-label="Transaction graph">
+          <div class="panel-head">
+            <div>
+              <span class="mini-label">RELATIONSHIP MAP</span>
+              <h2>Transaction Topology & Flow</h2>
+            </div>
+            <div class="graph-toolbar">
+              <div class="graph-layout-toggle" role="group" aria-label="Graph Layout">
+                <button type="button" class="graph-layout-btn active" data-layout="flow"
+                  title="Forensic Flow Trace (Left-to-Right Stages)">Flow Trace</button>
+                <button type="button" class="graph-layout-btn" data-layout="orbit" title="Radar Orbit View">Radar
+                  Orbit</button>
+              </div>
+              <div class="graph-filters" role="group" aria-label="Direction Filters">
+                <button type="button" class="graph-filter-btn active" data-filter="all">All</button>
+                <button type="button" class="graph-filter-btn" data-filter="in">Inflows (↓)</button>
+                <button type="button" class="graph-filter-btn" data-filter="out">Outflows (↑)</button>
+              </div>
+              <div class="graph-zoom-ctrls">
+                <button type="button" id="graph-zoom-in" title="Zoom In">+</button>
+                <button type="button" id="graph-zoom-out" title="Zoom Out">−</button>
+                <button type="button" id="graph-zoom-reset" title="Reset View">⌖</button>
+              </div>
+            </div>
+          </div>
+          <div id="graph-container" class="graph-container"></div>
+
+          <!-- Interactive Node Inspector Bar -->
+          <div class="node-inspector-bar" id="node-inspector-bar">
+            <span class="inspector-badge" id="inspector-badge">HOVER TO INSPECT</span>
+            <div class="inspector-details" id="inspector-details">
+              <span>Hover over any counterparty node or transfer path to inspect on-chain telemetry</span>
+            </div>
+          </div>
+
+          <div class="graph-legend">
+            <span><i class="legend-node root"></i> SUSPECT TARGET</span>
+            <span><i class="legend-node inflow"></i> INFLOW (DEPOSIT)</span>
+            <span><i class="legend-node outflow"></i> OUTFLOW (SWEEP)</span>
+            <span><i class="legend-node vasp"></i> IDENTIFIED VASP</span>
+            <span><i class="legend-line"></i> TRANSFER FLOW</span>
+            <span class="legend-hint">💡 Hover paths for amounts · Click to pin</span>
+          </div>
+        </section>
+      </div>
+
+      <!-- FORENSIC VISUAL ANALYTICS: BAR, PIE & RADAR CHARTS -->
+      <section class="panel analytics-panel" id="analytics-panel" aria-label="Visual Forensics Analytics">
+        <div class="panel-head">
+          <div>
+            <span class="mini-label">VISUAL FORENSIC ANALYTICS</span>
+            <h2>Multi-Dimensional Forensics & Flow Dynamics</h2>
+          </div>
+          <div class="flow-mode-switch">
+            <span class="switch-label">BAR METRIC:</span>
+            <button type="button" class="mode-btn active" id="btn-flow-vol">ETH Volume</button>
+            <button type="button" class="mode-btn" id="btn-flow-count">Tx Count</button>
+          </div>
+        </div>
+
+        <!-- 4 Forensic Behavioral KPIs (Compact) -->
+        <div class="analytics-kpi-grid">
+          <div class="kpi-card" id="kpi-volume">
+            <span class="kpi-label">TOTAL ETH VOLUME</span>
+            <div id="metric-card-vol">
+              <div class="kpi-val">— <span class="kpi-unit">ETH</span></div>
+              <div class="kpi-sub">Inflow vs Outflow</div>
+            </div>
+          </div>
+          <div class="kpi-card" id="kpi-velocity">
+            <span class="kpi-label">TRANSACTION VELOCITY</span>
+            <div id="metric-card-vel">
+              <div class="kpi-val">— <span class="kpi-unit">tx/day</span></div>
+              <div class="kpi-sub">Cadence profile</div>
+            </div>
+          </div>
+          <div class="kpi-card" id="kpi-structuring">
+            <span class="kpi-label">LAYERING / PEEL RISK</span>
+            <div id="metric-card-struct">
+              <div class="kpi-val">— <span class="kpi-unit">%</span></div>
+              <div class="kpi-sub">Pass-through sweep ratio</div>
+            </div>
+          </div>
+          <div class="kpi-card" id="kpi-clustering">
+            <span class="kpi-label">COUNTERPARTY NODES</span>
+            <div id="metric-card-clust">
+              <div class="kpi-val">— <span class="kpi-unit">nodes</span></div>
+              <div class="kpi-sub">Dominant cluster anchor</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3-Chart Cohesive Grid: Bar Chart, Pie Chart & Radar Vector -->
+        <div class="charts-grid charts-grid--triple">
+          <div class="chart-box chart-box--flow">
+            <div class="chart-title">
+              <span>TRANSACTION FLOW DYNAMICS (BAR CHART)</span>
+              <small>Inflows (Received ETH) vs Outflows (Dispersed ETH)</small>
+            </div>
+            <div class="chart-canvas-wrap">
+              <canvas id="flow-chart"></canvas>
+            </div>
+          </div>
+
+          <div class="chart-box chart-box--vasp">
+            <div class="chart-title">
+              <span>VASP ATTRIBUTION SPLIT (PIE CHART)</span>
+              <small>Confidence distribution across candidate entities</small>
+            </div>
+            <div class="chart-canvas-wrap">
+              <canvas id="vasp-chart"></canvas>
+            </div>
+          </div>
+
+          <div class="chart-box chart-box--radar">
+            <div class="chart-title">
+              <span>FORENSIC RISK VECTOR (RADAR)</span>
+              <small>Suspect Profile vs Trained Baseline</small>
+            </div>
+            <div class="chart-canvas-wrap">
+              <canvas id="radar-chart"></canvas>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel timeline-panel" aria-label="Transaction timeline">
+        <div class="panel-head">
+          <div><span class="mini-label">CHRONICLE</span>
+            <h2>Transaction timeline</h2>
+          </div>
+          <div class="legend"><span class="legend-item"><i class="legend-dot legend-dot--out"></i>Sent</span><span
+              class="legend-item"><i class="legend-dot legend-dot--in"></i>Received</span></div>
+        </div>
+        <div id="timeline-container" class="timeline-container"></div>
+      </section>
+
+      <section class="limitations glass">
+        <div class="warning-rune">!</div>
+        <div><strong>READ THE ASHES CORRECTLY</strong>
+          <p>This is probabilistic attribution based on on-chain evidence. A transaction relationship does not by itself
+            prove ownership or criminal activity.</p>
+        </div>
+        <span>UNCERTAINTY IS A FEATURE</span>
+      </section>
+
+      <div class="report-bar"><button id="export-btn" type="button">↧ &nbsp; FORGE INVESTIGATION REPORT</button></div>
+    </main>
+
+    <p id="status-message" class="status-message" role="status"></p>
+    <footer><span>DARK SOULS // FRONTEND & VISUALIZATION</span><span>BUILD FOR SIH 2026</span></footer>
+  </div>
+
+  <script src="data_contract.js"></script>
+  <script src="graph.js"></script>
+  <script src="timeline.js"></script>
+  <script src="charts.js"></script>
+  <script src="report.js"></script>
+  <script src="app.js"></script>
+  <script src="animations.js"></script>
+  <script src="particles.js"></script>
+  <script src="intro.js"></script>
+</body>
+
+</html>

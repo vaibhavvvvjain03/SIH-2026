@@ -1,0 +1,10 @@
+{
+  "evaluation": "blind holdout \u2014 model trained on 564 wallets, these 90 excluded",
+  "held_out_wallets": 90,
+  "flagged_insufficient_evidence": 14,
+  "committed_predictions": 76,
+  "accuracy_all": 0.8888888888888888,
+  "accuracy_committed": 0.9605263157894737,
+  "top_3_accuracy": 1.0,
+  "caveat": "Held-out wallets are exchange-controlled addresses drawn from the same labelled dataset. This is a valid train/holdout split, not an independently sourced evaluation set. Retail wallets that merely interacted with an exchange are a harder case."
+}
