@@ -1,0 +1,31 @@
+{
+    "evaluation_method": "5-fold stratified cross-validation (out-of-fold predictions, no train/test leakage)",
+    "accuracy": 0.8421985815602837,
+    "precision_weighted": 0.8495499181669395,
+    "recall_weighted": 0.8421985815602837,
+    "f1_weighted": 0.8451288613993553,
+    "top_3_accuracy": 1.0,
+    "accuracy_on_committed_predictions": 0.9064587973273942,
+    "confidence_threshold": 0.6,
+    "wallets_flagged_unknown": 115,
+    "cv_folds": 5,
+    "total_samples": 564,
+    "number_of_classes": 3,
+    "classes": [
+        "Binance",
+        "Coinbase",
+        "Kraken"
+    ],
+    "class_distribution": {
+        "Coinbase": 311,
+        "Kraken": 206,
+        "Binance": 47
+    },
+    "random_state": 42,
+    "random_forest_estimators": 300,
+    "isolation_forest_estimators": 300,
+    "anomaly_contamination": 0.05,
+    "anomalies_detected": 54,
+    "anomaly_percentage": 9.574468085106384,
+    "note": "Final saved model is retrained on the FULL dataset for deployment. All reported metrics above come from out-of-fold cross-validation, computed BEFORE that final refit, so none of them are inflated by the model having already seen the wallet it is scored on."
+}

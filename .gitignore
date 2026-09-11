@@ -1,0 +1,34 @@
+# ── virtual environments ─────────────────────────────
+.venv/
+venv/
+env/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ipynb_checkpoints/
+
+# ── EXCEEDS GITHUB'S 100 MB HARD LIMIT ───────────────
+# 323 MB. Not needed at runtime. Regenerate with
+# team/m1-data/Script_For_raw_transactions.py
+raw_transactions.csv
+**/raw_transactions.csv
+
+# ── NEVER COMMIT: true labels for the blind test ─────
+# Publishing these next to the predictions makes the
+# blind-evaluation claim much harder to defend.
+unknown_ground_truth.csv
+**/unknown_ground_truth.csv
+
+# ── superseded, 34 MB, unused at runtime ─────────────
+full_graph_evidence.json
+**/full_graph_evidence.json
+
+# ── secrets ──────────────────────────────────────────
+.env
+*.key
+
+# ── archives / OS noise ──────────────────────────────
+*.zip
+*.rar
+.DS_Store
+Thumbs.db
