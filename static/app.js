@@ -127,7 +127,8 @@ function renderResults(prediction,transactions,address){
       signalLabel = "CONVERGENT";
       signalClass = "feat-match";
     } else {
-      signalLabel = "— PARTIAL";
+      // 0-hop registry hit or missing partial data where no alignment is possible
+      signalLabel = "—";
       signalClass = "feat-nosignal";
     }
 

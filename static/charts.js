@@ -442,11 +442,18 @@ window.ForensicCharts = window.ForensicCharts || {};
     }
 
     if (velEl) {
-      const burstTag = metrics.txPerDay > 5 ? "BURST PATTERN" : "STEADY CADENCE";
-      velEl.innerHTML = `
-        <div class="kpi-val">${metrics.txPerDay.toFixed(1)} <span class="kpi-unit">tx/day</span></div>
-        <div class="kpi-sub">${metrics.spanDays.toFixed(0)} active days · <span class="badge-sub">${burstTag}</span></div>
-      `;
+      const kpiVelocityCard = document.getElementById("kpi-velocity");
+      if (prediction && prediction.transactions_analysed == null) {
+        // Registry match: no behavioral inference happened, hide derived velocity stats
+        if (kpiVelocityCard) kpiVelocityCard.style.display = "none";
+      } else {
+        if (kpiVelocityCard) kpiVelocityCard.style.display = ""; // restore default
+        const burstTag = metrics.txPerDay > 5 ? "BURST PATTERN" : "STEADY CADENCE";
+        velEl.innerHTML = `
+          <div class="kpi-val">${metrics.txPerDay.toFixed(1)} <span class="kpi-unit">tx/day</span></div>
+          <div class="kpi-sub">${metrics.spanDays.toFixed(0)} active days · <span class="badge-sub">${burstTag}</span></div>
+        `;
+      }
     }
 
     if (structEl) {

@@ -300,7 +300,7 @@ async def get_attribution(address: str = Query(...), chain: str = Query(...)):
                 "address": address, "chain": chain,
                 "ranked_vasps": [{"name": name, "score": 0.99, "ml_score": None, "graph_support": True}],
                 "ml_score": 0.99, "graph_score": 0.99, "graph_nearest_vasp": name,
-                "transaction_score": 0.99, "fused_score": 0.99, "ml_graph_agreement": True,
+                "transaction_score": 0.99, "fused_score": 0.99, "ml_graph_agreement": None,
                 "anomaly_score": 0.0, "is_anomaly": False, "transactions_analysed": None,
                 "evidence": ev, "unknown_or_insufficient_evidence": False,
             }
