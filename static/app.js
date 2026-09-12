@@ -82,20 +82,54 @@ function renderResults(prediction,transactions,address){
   const evList = document.getElementById("evidence-points-list");
 
   if (featGrid) {
-    const vals = (transactions || []).map((t) => Number(t.value) || 0);
-    const volEth = vals.reduce((a, b) => a + b, 0);
-    const avgVal = vals.length ? volEth / vals.length : 0;
-    const variance = vals.length > 1
-      ? vals.reduce((acc, v) => acc + Math.pow(v - avgVal, 2), 0) / (vals.length - 1)
-      : 0;
-    const stdVal = Math.sqrt(variance);
+    // Use model_features when available — these are computed over all fetched
+    // transactions (up to 1000), matching exactly what the classifier saw.
+    // Fall back to recomputing from the display transactions only if the backend
+    // didn't return model_features (e.g. mock mode or old backend).
+    const mf = prediction.model_features || null;
 
-    const dates = (transactions || [])
-      .map((t) => (t.timestamp ? new Date(t.timestamp).toISOString().slice(0, 10) : null))
-      .filter(Boolean);
-    const uniqueDays = new Set(dates).size || 1;
-    const txCount = prediction.transactions_analysed || transactions.length || 0;
-    const cadence = (txCount / uniqueDays).toFixed(1);
+    let volEth, avgVal, stdVal, uniqueDays, cadence;
+
+    if (mf) {
+      // Issue 1 fix: use the model's own values, not a recomputation from 20 tx
+      volEth    = Number(mf.volume_eth)  || 0;
+      avgVal    = Number(mf.avg_tx_value) || 0;
+      stdVal    = Number(mf.std_tx_value) || 0;
+      uniqueDays = Math.round(Number(mf.active_days) || 0);
+      cadence   = (Number(mf.transactions_per_day) || 0).toFixed(1);
+    } else {
+      const vals = (transactions || []).map((t) => Number(t.value) || 0);
+      volEth = vals.reduce((a, b) => a + b, 0);
+      avgVal = vals.length ? volEth / vals.length : 0;
+      const variance = vals.length > 1
+        ? vals.reduce((acc, v) => acc + Math.pow(v - avgVal, 2), 0) / (vals.length - 1)
+        : 0;
+      stdVal = Math.sqrt(variance);
+
+      const dates = (transactions || [])
+        .map((t) => (t.timestamp ? new Date(t.timestamp).toISOString().slice(0, 10) : null))
+        .filter(Boolean);
+      uniqueDays = new Set(dates).size || 1;
+      const txCount = prediction.transactions_analysed || transactions.length || 0;
+      cadence = (txCount / uniqueDays).toFixed(1);
+    }
+
+    // Issue 5 fix: don't report CONVERGENT when there is no signal
+    const hasSignal = !prediction.unknown_or_insufficient_evidence;
+    let signalLabel, signalClass;
+    if (!hasSignal) {
+      signalLabel = "— NO SIGNAL";
+      signalClass = "feat-nosignal";
+    } else if (prediction.ml_graph_agreement === false) {
+      signalLabel = "DIVERGENT";
+      signalClass = "feat-diverge";
+    } else if (prediction.ml_graph_agreement === true) {
+      signalLabel = "CONVERGENT";
+      signalClass = "feat-match";
+    } else {
+      signalLabel = "— PARTIAL";
+      signalClass = "feat-nosignal";
+    }
 
     featGrid.innerHTML = `
       <div class="feat-chip">
@@ -120,9 +154,7 @@ function renderResults(prediction,transactions,address){
       </div>
       <div class="feat-chip">
         <span class="feat-name">Signal Agreement</span>
-        <strong class="feat-val ${prediction.ml_graph_agreement === false ? "feat-diverge" : "feat-match"}">
-          ${prediction.ml_graph_agreement === false ? "DIVERGENT" : "CONVERGENT"}
-        </strong>
+        <strong class="feat-val ${signalClass}">${signalLabel}</strong>
       </div>
     `;
   }
@@ -134,9 +166,9 @@ function renderResults(prediction,transactions,address){
   }
   
   const vaspNames=prediction.ranked_vasps?prediction.ranked_vasps.map(v=>v.name):[];
-  renderTransactionGraph(graphContainer,{rootAddress:address,transactions,vaspNames});
+  renderTransactionGraph(graphContainer,{rootAddress:address,transactions,vaspNames,transactionsAnalysed:prediction.transactions_analysed});
   if (window.Graph.initToolbar) window.Graph.initToolbar();
-  renderTimeline(timelineContainer,{rootAddress:address,transactions});
+  renderTimeline(timelineContainer,{rootAddress:address,transactions,transactionsAnalysed:prediction.transactions_analysed});
 
   // Render forensic charts (Bar Chart, Pie Chart & Radar)
   if (renderForensicCharts) {

@@ -2949,4 +2949,9 @@ body.intro-active { overflow: hidden; height: 100vh; }
   color: #8a8072;
 }
 
+/* ---- Behavioural Feature Signature chip colour modifiers ---- */
+.feat-match  { color: #22c55e; }
+.feat-diverge { color: #f97316; }
+/* Issue 5: used when unknown_or_insufficient_evidence = true — no signals to compare */
+.feat-nosignal { color: #6b6560; font-style: italic; }
 

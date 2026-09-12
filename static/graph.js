@@ -15,9 +15,9 @@ window.Graph = window.Graph || {};
   let pinnedNodeId = null;
   let activeTooltip = null;
 
-  window.Graph.renderTransactionGraph = function (container, { rootAddress, transactions, vaspNames }) {
+  window.Graph.renderTransactionGraph = function (container, { rootAddress, transactions, vaspNames, transactionsAnalysed }) {
     cachedContainer = container;
-    cachedData = { rootAddress, transactions: transactions || [], vaspNames: vaspNames || [] };
+    cachedData = { rootAddress, transactions: transactions || [], vaspNames: vaspNames || [], transactionsAnalysed: transactionsAnalysed || null };
     pinnedNodeId = null;
     currentZoom = 1;
     currentPan = { x: 0, y: 0 };
@@ -27,7 +27,7 @@ window.Graph = window.Graph || {};
   function render() {
     if (!cachedContainer || !cachedData) return;
     const container = cachedContainer;
-    const { rootAddress, transactions, vaspNames } = cachedData;
+    const { rootAddress, transactions, vaspNames, transactionsAnalysed } = cachedData;
     container.innerHTML = "";
 
     const clientW = container.clientWidth || 720;
@@ -223,7 +223,7 @@ window.Graph = window.Graph || {};
 
     // Draw Background Stage Columns / Radar Rings
     if (currentLayout === "flow") {
-      drawStageHeaders(gViewport, NS, dynamicWidth, dynamicHeight, totalInflowEth, totalOutflowEth, inflowNodes.length, outflowNodes.length, transactions.length);
+      drawStageHeaders(gViewport, NS, dynamicWidth, dynamicHeight, totalInflowEth, totalOutflowEth, inflowNodes.length, outflowNodes.length, transactions.length, transactionsAnalysed);
     } else {
       drawRadarRings(gViewport, NS, dynamicWidth, dynamicHeight);
     }
@@ -445,7 +445,8 @@ window.Graph = window.Graph || {};
         volText.setAttribute("text-anchor", textAnchor);
         volText.setAttribute("class", `node-sub-label ${isInflow ? "vol-in" : "vol-out"}`);
         const volAmt = isInflow ? n.totalOut : n.totalIn;
-        volText.textContent = `${isInflow ? "+" : "-"}${volAmt.toFixed(2)} ETH`;
+        // Issue 2 fix: clamp float display to 4 decimal places
+        volText.textContent = `${isInflow ? "+" : "-"}${parseFloat(volAmt.toFixed(4))} ETH`;
         labelGroup.appendChild(volText);
       }
 
@@ -599,7 +600,7 @@ window.Graph = window.Graph || {};
 
   // --- BACKGROUND & STAGE BANNERS ---
 
-  function drawStageHeaders(parentG, NS, width, height, totalIn, totalOut, inCount, outCount, txCount) {
+  function drawStageHeaders(parentG, NS, width, height, totalIn, totalOut, inCount, outCount, txCount, transactionsAnalysed) {
     const headerG = document.createElementNS(NS, "g");
     headerG.setAttribute("class", "stage-headers-layer");
 
@@ -640,7 +641,7 @@ window.Graph = window.Graph || {};
     inSub.setAttribute("y", 48);
     inSub.setAttribute("class", "stage-subtitle");
     inSub.setAttribute("text-anchor", "middle");
-    inSub.textContent = `↓ ${totalIn.toFixed(2)} ETH · ${inCount} senders`;
+    inSub.textContent = `↓ ${parseFloat(totalIn.toFixed(4))} ETH · ${inCount} senders`;
     headerG.appendChild(inSub);
 
     // Center Stage Header (Suspect Hub)
@@ -657,7 +658,12 @@ window.Graph = window.Graph || {};
     midSub.setAttribute("y", 48);
     midSub.setAttribute("class", "stage-subtitle");
     midSub.setAttribute("text-anchor", "middle");
-    midSub.textContent = `◈ ${txCount} Indexed Transfers`;
+    // Issue 3 fix: clarify the difference between displayed and analysed counts
+    if (transactionsAnalysed && transactionsAnalysed > txCount) {
+      midSub.textContent = `◈ SHOWING ${txCount} OF ${transactionsAnalysed} TRANSFERS`;
+    } else {
+      midSub.textContent = `◈ ${txCount} Indexed Transfers`;
+    }
     headerG.appendChild(midSub);
 
     // Right Stage Header (Outflows)
@@ -674,7 +680,7 @@ window.Graph = window.Graph || {};
     outSub.setAttribute("y", 48);
     outSub.setAttribute("class", "stage-subtitle");
     outSub.setAttribute("text-anchor", "middle");
-    outSub.textContent = `↑ ${totalOut.toFixed(2)} ETH · ${outCount} receivers`;
+    outSub.textContent = `↑ ${parseFloat(totalOut.toFixed(4))} ETH · ${outCount} receivers`;
     headerG.appendChild(outSub);
 
     parentG.appendChild(headerG);

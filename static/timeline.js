@@ -8,7 +8,7 @@
  */
 window.Timeline = window.Timeline || {};
 
-window.Timeline.renderTimeline = function (container, { rootAddress, transactions }) {
+window.Timeline.renderTimeline = function (container, { rootAddress, transactions, transactionsAnalysed }) {
   container.innerHTML = "";
 
   if (!transactions?.length) {
@@ -42,13 +42,20 @@ window.Timeline.renderTimeline = function (container, { rootAddress, transaction
   const lastTime = new Date(sorted[sorted.length - 1].timestamp);
   const timeSpanHours = Math.max(1, Math.round((lastTime - firstTime) / (1000 * 60 * 60)));
 
+  // Issue 3 fix: label the event count to clarify "shown" vs "analysed"
+  const displayCount = sorted.length;
+  const totalAnalysed = transactionsAnalysed && transactionsAnalysed > displayCount ? transactionsAnalysed : null;
+  const flowEventLabel = totalAnalysed
+    ? `${displayCount} <small>OF ${totalAnalysed} EVENTS</small>`
+    : `${displayCount} <small>EVENTS</small>`;
+
   // 1. STATS STRIP
   const statsBar = document.createElement("div");
   statsBar.className = "timeline-stats-bar";
   statsBar.innerHTML = `
     <div class="timeline-stat-item">
       <span class="timeline-stat-label">RECORDED FLOW</span>
-      <strong class="timeline-stat-val">${sorted.length} <small>EVENTS</small></strong>
+      <strong class="timeline-stat-val">${flowEventLabel}</strong>
     </div>
     <div class="timeline-stat-item">
       <span class="timeline-stat-label">TOTAL OUTFLOW</span>
@@ -251,7 +258,8 @@ window.Timeline.renderTimeline = function (container, { rootAddress, transaction
         <span class="chronicle-time">${dateFormatted} · ${timeFormatted}</span>
       </div>
       <div class="chronicle-val">
-        <strong>${isOut ? "-" : "+"}${tx.value}</strong>
+        <!-- Issue 2 fix: format ETH values to 4 d.p. to avoid floating-point artifacts -->
+        <strong>${isOut ? "-" : "+"}${parseFloat(Number(tx.value).toFixed(4))}</strong>
         <span class="chronicle-token">${escapeHtml(tx.token || "ETH")}</span>
       </div>
       <div class="chronicle-meta">
@@ -340,7 +348,7 @@ window.Timeline.renderTimeline = function (container, { rootAddress, transaction
         <span class="tt-badge ${isOut ? "out" : "in"}">${isOut ? "OUTFLOW ↗" : "INFLOW ↙"}</span>
         <span class="tt-time">${d.toLocaleString()}</span>
       </div>
-      <div class="tt-val">${isOut ? "-" : "+"}${tx.value} ${tx.token || "ETH"}</div>
+      <div class="tt-val">${isOut ? "-" : "+"}${parseFloat(Number(tx.value).toFixed(4))} ${tx.token || "ETH"}</div>
       <div class="tt-detail"><span>${isOut ? "Recipient:" : "Sender:"}</span> <code>${shortenAddress(isOut ? tx.to : tx.from)}</code></div>
       <div class="tt-detail"><span>Tx Hash:</span> <code>${shortenAddress(tx.tx_hash)}</code></div>
     `;

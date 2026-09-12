@@ -137,8 +137,9 @@ window.ForensicCharts = window.ForensicCharts || {};
           "Graph Proximity",
           "Tx Velocity",
           "Volume Density",
-          "Layering / Sweep",
-          "Entity Clustering",
+          // Issue 4 fix: rename from risk-scoring language to data-derived label
+          "Outflow Ratio",
+          "Counterparty Spread",
         ],
         datasets: [
           {
@@ -453,7 +454,10 @@ window.ForensicCharts = window.ForensicCharts || {};
       const lvlClass = metrics.structuringIndex > 0.65 ? "danger" : metrics.structuringIndex > 0.4 ? "warn" : "safe";
       structEl.innerHTML = `
         <div class="kpi-val ${lvlClass}">${lvl} <span class="kpi-unit">${(metrics.structuringIndex * 100).toFixed(0)}%</span></div>
-        <div class="kpi-sub">Pass-through sweep & rapid turnaround index</div>
+        <!-- Issue 4 fix: label this as a computed ratio, not a validated risk score.
+             Formula: min(outflow/inflow, 1) * 0.55 + (txCount>15 ? 0.30 : 0.10).
+             Derived from the 20 display transactions only. -->
+        <div class="kpi-sub">Outflow ÷ Inflow ratio &middot; on-chain data only</div>
       `;
     }
 
@@ -476,6 +480,15 @@ window.ForensicCharts = window.ForensicCharts || {};
     cachedRoot = rootAddress;
 
     const metrics = analyzeForensicMetrics(cachedTransactions, prediction, rootAddress);
+
+    // Issue 1 fix: if the backend returned model_features, override the velocity
+    // card values with the model's own numbers (computed over up to 1000 tx)
+    // so the Visual Forensic Analytics panel matches the Behavioural Feature Signature.
+    if (prediction && prediction.model_features) {
+      metrics.txPerDay  = Number(prediction.model_features.transactions_per_day) || metrics.txPerDay;
+      metrics.spanDays  = Number(prediction.model_features.active_days)          || metrics.spanDays;
+    }
+
     updateMetricCards(metrics, prediction);
 
     renderRadarChart("radar-chart", prediction, metrics);

@@ -110,6 +110,11 @@ class AttributionResponse(BaseModel):
     anomaly_score: Optional[float] = None
     is_anomaly: Optional[bool] = None
     transactions_analysed: Optional[int] = None
+    # model_features: the exact values M2 computed over up to 1000 tx — the
+    # numbers the classifier actually saw. The frontend must display these
+    # (not recompute from the 20 display transactions) so every panel shows
+    # the same numbers the accuracy claims rest on.
+    model_features: Optional[dict] = None
     evidence: List[str]
     unknown_or_insufficient_evidence: bool
 
@@ -320,6 +325,17 @@ async def get_attribution(address: str = Query(...), chain: str = Query(...)):
     # ── 3. ML prediction ─────────────────────────────────────────────────────
     result = predict_wallet_vasp(address=address, chain=chain, features=features)
     result["transactions_analysed"] = len(txs)
+    # Expose the model's own feature values so the frontend can show the
+    # same numbers the classifier saw (computed over all fetched tx) rather
+    # than recomputing from only the 20 display transactions.
+    result["model_features"] = {
+        "active_days": round(features.get("active_days", 0), 0),
+        "transactions_per_day": round(features.get("transactions_per_day", 0), 2),
+        "volume_eth": round(features.get("volume_eth", 0), 4),
+        "avg_tx_value": round(features.get("avg_tx_value", 0), 4),
+        "std_tx_value": round(features.get("std_tx_value", 0), 4),
+        "activity_duration_days": round(features.get("activity_duration_days", 0), 1),
+    }
 
     if result.get("unknown_or_insufficient_evidence"):
         result.update({"fused_score": 0.0, "transaction_score": 0.0,
