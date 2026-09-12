@@ -375,14 +375,15 @@ async def get_attribution(address: str = Query(...), chain: str = Query(...)):
             graph_nearest = gv["top"]
             result["evidence"].extend(gv["evidence"])
 
-    if addr in graph_db:
-        gd = graph_db[addr]
-        graph_score = float(gd.get("graph_score", 0.0))
-        graph_nearest = gd.get("nearest_vasp")
-        result["evidence"].extend(gd.get("evidence", []))
-    else:
-        graph_score, graph_nearest = 0.0, None
-        result["evidence"].append("No graph topology data found for this wallet.")
+    if graph_vector is None:
+        if addr in graph_db:
+            gd = graph_db[addr]
+            graph_score = float(gd.get("graph_score", 0.0))
+            graph_nearest = gd.get("nearest_vasp")
+            result["evidence"].extend(gd.get("evidence", []))
+        else:
+            graph_score, graph_nearest = 0.0, None
+            result["evidence"].append("No graph topology data found for this wallet.")
 
     tx_score = compute_transaction_score(features)
 
