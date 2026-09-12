@@ -21,7 +21,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-ETHERSCAN_API_KEY = os.getenv("ETHERSCAN_API_KEY", "KN725A7HJJF1H1IRJME7FNK5SZZUX5KHN2")
+ETHERSCAN_API_KEY = os.getenv("ETHERSCAN_API_KEY", "")
 
 # ── TRAIN / SERVE PARITY ─────────────────────────────────────────────────────
 # Verified against M1's raw_transactions.csv: 367 of 624 wallets are capped at
@@ -30,6 +30,8 @@ ETHERSCAN_API_KEY = os.getenv("ETHERSCAN_API_KEY", "KN725A7HJJF1H1IRJME7FNK5SZZU
 # magnitude away from anything the model saw in training.
 FEATURE_TX_LIMIT = 1000
 DISPLAY_TX_LIMIT = 20
+
+SUPPORTED_CHAINS = {"ethereum"}
 
 # ── FUSION WEIGHTS (blueprint Section 7) ─────────────────────────────────────
 W_ML = 0.40
@@ -276,10 +278,9 @@ def fuse_per_candidate(ranked_vasps, graph_score, graph_nearest, tx_score, known
 
 @app.get("/transactions", response_model=List[TransactionResponse])
 async def get_transactions(address: str = Query(...), chain: str = Query(...)):
+    if chain.lower() not in SUPPORTED_CHAINS:
+        return []
     return await fetch_transactions(address, chain.lower(), DISPLAY_TX_LIMIT)
-
-
-SUPPORTED_CHAINS = {"ethereum"}
 
 @app.get("/attribution", response_model=AttributionResponse)
 async def get_attribution(address: str = Query(...), chain: str = Query(...)):
