@@ -132,32 +132,42 @@ function renderResults(prediction,transactions,address){
       signalClass = "feat-nosignal";
     }
 
-    featGrid.innerHTML = `
-      <div class="feat-chip">
-        <span class="feat-name">Volume ETH</span>
-        <strong class="feat-val">${volEth.toFixed(2)} Ξ</strong>
-      </div>
-      <div class="feat-chip">
-        <span class="feat-name">Avg Transfer</span>
-        <strong class="feat-val">${avgVal.toFixed(3)} Ξ</strong>
-      </div>
-      <div class="feat-chip">
-        <span class="feat-name">Transfer StdDev</span>
-        <strong class="feat-val">${stdVal.toFixed(3)}</strong>
-      </div>
-      <div class="feat-chip">
-        <span class="feat-name">Active Days</span>
-        <strong class="feat-val">${uniqueDays} days</strong>
-      </div>
-      <div class="feat-chip">
-        <span class="feat-name">Tx Cadence</span>
-        <strong class="feat-val">${cadence} tx/day</strong>
-      </div>
-      <div class="feat-chip">
-        <span class="feat-name">Signal Agreement</span>
-        <strong class="feat-val ${signalClass}">${signalLabel}</strong>
-      </div>
-    `;
+    if (mf) {
+      featGrid.style.display = "";
+      const featHead = document.querySelector(".evidence-matrix-head");
+      if (featHead) featHead.style.display = "";
+
+      featGrid.innerHTML = `
+        <div class="feat-chip">
+          <span class="feat-name">Volume ETH</span>
+          <strong class="feat-val">${volEth.toFixed(2)} Ξ</strong>
+        </div>
+        <div class="feat-chip">
+          <span class="feat-name">Avg Transfer</span>
+          <strong class="feat-val">${avgVal.toFixed(3)} Ξ</strong>
+        </div>
+        <div class="feat-chip">
+          <span class="feat-name">Transfer StdDev</span>
+          <strong class="feat-val">${stdVal.toFixed(3)}</strong>
+        </div>
+        <div class="feat-chip">
+          <span class="feat-name">Active Days</span>
+          <strong class="feat-val">${uniqueDays} days</strong>
+        </div>
+        <div class="feat-chip">
+          <span class="feat-name">Tx Cadence</span>
+          <strong class="feat-val">${cadence} tx/day</strong>
+        </div>
+        <div class="feat-chip">
+          <span class="feat-name">Signal Agreement</span>
+          <strong class="feat-val ${signalClass}">${signalLabel}</strong>
+        </div>
+      `;
+    } else {
+      featGrid.style.display = "none";
+      const featHead = document.querySelector(".evidence-matrix-head");
+      if (featHead) featHead.style.display = "none";
+    }
   }
 
   if (evList && prediction.evidence) {

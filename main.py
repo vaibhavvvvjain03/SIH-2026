@@ -21,7 +21,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-ETHERSCAN_API_KEY = os.getenv("ETHERSCAN_API_KEY", "KN725A7HJJF1H1IRJME7FNK5SZZUX5KHN2")
+ETHERSCAN_API_KEY = os.getenv("ETHERSCAN_API_KEY", "")
 
 # ── TRAIN / SERVE PARITY ─────────────────────────────────────────────────────
 # Verified against M1's raw_transactions.csv: 367 of 624 wallets are capped at
@@ -279,10 +279,27 @@ async def get_transactions(address: str = Query(...), chain: str = Query(...)):
     return await fetch_transactions(address, chain.lower(), DISPLAY_TX_LIMIT)
 
 
+SUPPORTED_CHAINS = {"ethereum"}
+
 @app.get("/attribution", response_model=AttributionResponse)
 async def get_attribution(address: str = Query(...), chain: str = Query(...)):
     addr = address.lower().strip()
     chain = chain.lower()
+
+    if chain not in SUPPORTED_CHAINS:
+        return {
+            "address": address, "chain": chain, "ranked_vasps": [],
+            "ml_score": 0.0, "graph_score": None, "graph_nearest_vasp": None,
+            "transaction_score": 0.0, "fused_score": 0.0,
+            "ml_graph_agreement": None, "anomaly_score": 0.0, "is_anomaly": False,
+            "transactions_analysed": None, "model_features": None,
+            "evidence": [
+                f"Chain '{chain}' is not supported by this model.",
+                "The classifier and graph index were built from Ethereum mainnet "
+                "data only. Attributing another chain would be out-of-distribution.",
+            ],
+            "unknown_or_insufficient_evidence": True,
+        }
 
     # ── 1. Direct 0-hop registry match ───────────────────────────────────────
     if not vasp_df.empty and "wallet_address" in vasp_df.columns:
@@ -300,8 +317,9 @@ async def get_attribution(address: str = Query(...), chain: str = Query(...)):
                 "address": address, "chain": chain,
                 "ranked_vasps": [{"name": name, "score": 0.99, "ml_score": None, "graph_support": True}],
                 "ml_score": 0.99, "graph_score": 0.99, "graph_nearest_vasp": name,
-                "transaction_score": 0.99, "fused_score": 0.99, "ml_graph_agreement": None,
+                "transaction_score": None, "fused_score": 0.99, "ml_graph_agreement": None,
                 "anomaly_score": 0.0, "is_anomaly": False, "transactions_analysed": None,
+                "model_features": None, "fusion_weights_applied": {"known_address": 1.0},
                 "evidence": ev, "unknown_or_insufficient_evidence": False,
             }
 
@@ -357,9 +375,7 @@ async def get_attribution(address: str = Query(...), chain: str = Query(...)):
             graph_nearest = gv["top"]
             result["evidence"].extend(gv["evidence"])
 
-    if graph_vector is not None:
-        pass
-    elif addr in graph_db:
+    if addr in graph_db:
         gd = graph_db[addr]
         graph_score = float(gd.get("graph_score", 0.0))
         graph_nearest = gd.get("nearest_vasp")

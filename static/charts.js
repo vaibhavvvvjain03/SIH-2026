@@ -429,6 +429,14 @@ window.ForensicCharts = window.ForensicCharts || {};
    * Update the 4 Quick Forensic Metric Cards in the Analytics Hub
    */
   function updateMetricCards(metrics, prediction) {
+    const kpiGrid = document.querySelector(".analytics-kpi-grid");
+    if (prediction && !prediction.model_features) {
+      if (kpiGrid) kpiGrid.style.display = "none";
+      return;
+    } else {
+      if (kpiGrid) kpiGrid.style.display = "";
+    }
+
     const volEl = document.getElementById("metric-card-vol");
     const velEl = document.getElementById("metric-card-vel");
     const structEl = document.getElementById("metric-card-struct");
@@ -442,18 +450,11 @@ window.ForensicCharts = window.ForensicCharts || {};
     }
 
     if (velEl) {
-      const kpiVelocityCard = document.getElementById("kpi-velocity");
-      if (prediction && prediction.transactions_analysed == null) {
-        // Registry match: no behavioral inference happened, hide derived velocity stats
-        if (kpiVelocityCard) kpiVelocityCard.style.display = "none";
-      } else {
-        if (kpiVelocityCard) kpiVelocityCard.style.display = ""; // restore default
-        const burstTag = metrics.txPerDay > 5 ? "BURST PATTERN" : "STEADY CADENCE";
-        velEl.innerHTML = `
-          <div class="kpi-val">${metrics.txPerDay.toFixed(1)} <span class="kpi-unit">tx/day</span></div>
-          <div class="kpi-sub">${metrics.spanDays.toFixed(0)} active days · <span class="badge-sub">${burstTag}</span></div>
-        `;
-      }
+      const burstTag = metrics.txPerDay > 5 ? "BURST PATTERN" : "STEADY CADENCE";
+      velEl.innerHTML = `
+        <div class="kpi-val">${metrics.txPerDay.toFixed(1)} <span class="kpi-unit">tx/day</span></div>
+        <div class="kpi-sub">${metrics.spanDays.toFixed(0)} active days · <span class="badge-sub">${burstTag}</span></div>
+      `;
     }
 
     if (structEl) {
