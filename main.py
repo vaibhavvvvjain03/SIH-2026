@@ -21,7 +21,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-ETHERSCAN_API_KEY = os.getenv("ETHERSCAN_API_KEY", "")
+ETHERSCAN_API_KEY = os.getenv("ETHERSCAN_API_KEY", "KN725A7HJJF1H1IRJME7FNK5SZZUX5KHN2")
 
 # ── TRAIN / SERVE PARITY ─────────────────────────────────────────────────────
 # Verified against M1's raw_transactions.csv: 367 of 624 wallets are capped at
